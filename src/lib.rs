@@ -18,11 +18,11 @@ pub fn disable_color() -> () {
     IS_COLOR.store(color::OFF, Ordering::SeqCst)
 }
 
+/// Checks if the color escape sequences are enabled.
 fn is_coloring() -> bool {
     match IS_COLOR.load(Ordering::SeqCst) {
         color::ON => true,
         color::OFF => false,
-        _ => panic!("impossible color enable setting"),
     }
 }
 
