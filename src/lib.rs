@@ -26,6 +26,15 @@ fn is_coloring() -> bool {
     }
 }
 
+type FgColor = Option<u8>;
+type Decoration = Option<u8>;
+
+struct Code(FgColor, Decoration);
+
+// @idea: have some way to store codes for colored string and then either display or drop them
+// upon display/to_string being called.
+// - need a way to use `Color` trait on ColoredString (color can only have color and style)
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct ColoredString(String);
 
@@ -60,11 +69,13 @@ macro_rules! coloring {
     ($a:expr, $b:expr) => {{
         match is_coloring() {
             true => {
-                String::from("\u{001b}[")
+                String::from(ESC_SEQ)
+                    + "["
                     + &$b.to_string()
                     + "m"
                     + $a.as_ref()
-                    + "\u{001b}["
+                    + ESC_SEQ
+                    + "["
                     + &palette::RESET.to_string()
                     + "m"
             }
@@ -129,6 +140,8 @@ mod palette {
     pub const CYAN: u8 = 36;
     pub const WHITE: u8 = 37;
 }
+
+const ESC_SEQ: &str = "\u{001b}";
 
 #[cfg(test)]
 mod tests {

@@ -1,7 +1,7 @@
 use crayon::Color;
 
 fn main() -> () {
-    // crayon::disable_color();
+    crayon::disable_color();
     println!(
         "{} {} {}",
         "red".red().bold().underline(),
