@@ -26,122 +26,470 @@ fn is_coloring() -> bool {
     }
 }
 
-type FgColor = Option<u8>;
-type Decoration = Option<u8>;
+macro_rules! coloring {
+    ($word:expr, $code:expr) => {{
+        match is_coloring() {
+            true => {
+                format!(
+                    "{}{}{}{}{}{}{}",
+                    if let Some(bg) = &$code.bg {
+                        ESC_SEQ.to_owned() + "[" + &bg.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(fg) = &$code.fg {
+                        println!("{:?}", fg.to_string());
+                        ESC_SEQ.to_owned() + "[" + &fg.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(dc) = &$code.bold {
+                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(dc) = &$code.underline {
+                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(dc) = &$code.reversed {
+                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    $word.to_string(),
+                    if $code.is_decorated() == true {
+                        ESC_SEQ.to_owned() + "[" + RESET_CODE + "m"
+                    } else {
+                        String::new()
+                    }
+                )
+            }
+            false => <str as AsRef<str>>::as_ref($word).to_string(),
+        }
+    }};
+}
 
-struct Code(FgColor, Decoration);
+use palette::*;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Code {
+    fg: Option<Fg>,
+    bg: Option<Bg>,
+    bold: Option<Bold>,
+    underline: Option<Underline>,
+    reversed: Option<Reversed>,
+}
+
+impl Code {
+    fn is_decorated(&self) -> bool {
+        self.fg.is_some()
+            || self.bg.is_some()
+            || self.bold.is_some()
+            || self.underline.is_some()
+            || self.reversed.is_some()
+    }
+}
 
 // @idea: have some way to store codes for colored string and then either display or drop them
 // upon display/to_string being called.
 // - need a way to use `Color` trait on ColoredString (color can only have color and style)
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct ColoredString(String);
+pub struct ColoredString {
+    data: String,
+    code: Code,
+}
 
 impl Display for ColoredString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", coloring!(&self.data, &self.code))
     }
 }
 
-impl AsRef<str> for ColoredString {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
+impl<T: AsRef<str>> AccessCode for T {}
+
+impl AccessCode for ColoredString {
+    fn get_code(&self) -> Code {
+        dbg!(&self.code);
+        self.code.clone()
     }
 }
 
-pub trait Color<T: AsRef<str>> {
+pub trait AccessCode {
+    fn get_code(&self) -> Code {
+        Code {
+            fg: None,
+            bg: None,
+            bold: None,
+            underline: None,
+            reversed: None,
+        }
+    }
+}
+
+pub trait Color<T: Display + AccessCode> {
+    fn bold(&self) -> ColoredString;
+    fn underline(&self) -> ColoredString;
+    fn reversed(&self) -> ColoredString;
+
+    fn black(&self) -> ColoredString;
     fn red(&self) -> ColoredString;
     fn green(&self) -> ColoredString;
-    fn blue(&self) -> ColoredString;
-
     fn yellow(&self) -> ColoredString;
-    fn black(&self) -> ColoredString;
+    fn blue(&self) -> ColoredString;
     fn magenta(&self) -> ColoredString;
     fn cyan(&self) -> ColoredString;
     fn white(&self) -> ColoredString;
 
-    fn bold(&self) -> ColoredString;
-    fn underline(&self) -> ColoredString;
+    fn bg_black(&self) -> ColoredString;
+    fn bg_red(&self) -> ColoredString;
+    fn bg_green(&self) -> ColoredString;
+    fn bg_yellow(&self) -> ColoredString;
+    fn bg_blue(&self) -> ColoredString;
+    fn bg_magenta(&self) -> ColoredString;
+    fn bg_cyan(&self) -> ColoredString;
+    fn bg_white(&self) -> ColoredString;
 }
 
-macro_rules! coloring {
-    ($a:expr, $b:expr) => {{
-        match is_coloring() {
-            true => {
-                String::from(ESC_SEQ)
-                    + "["
-                    + &$b.to_string()
-                    + "m"
-                    + $a.as_ref()
-                    + ESC_SEQ
-                    + "["
-                    + &palette::RESET.to_string()
-                    + "m"
-            }
-            false => <str as AsRef<str>>::as_ref($a).to_string(),
-        }
-    }};
-}
-
-impl<T: AsRef<str>> Color<T> for T {
-    fn red(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::RED))
-    }
-
-    fn green(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::GREEN))
-    }
-
-    fn blue(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::BLUE))
-    }
-
-    fn yellow(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::YELLOW))
-    }
-
-    fn black(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::BLACK))
-    }
-
-    fn magenta(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::MAGENTA))
-    }
-
-    fn cyan(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::CYAN))
-    }
-
-    fn white(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::WHITE))
-    }
-
+impl<T: Display + AccessCode> Color<T> for T {
     fn bold(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::BOLD))
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: self.get_code().bg,
+                bold: Some(Bold),
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
     }
 
     fn underline(&self) -> ColoredString {
-        ColoredString(coloring!(self.as_ref(), palette::UNDERLINE))
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: Some(Underline),
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn reversed(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: Some(Reversed),
+            },
+        }
+    }
+
+    fn black(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::Black),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn red(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::Red),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn green(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::Green),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn yellow(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::Yellow),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn blue(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::Blue),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn magenta(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::Magenta),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn cyan(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::Cyan),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn white(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: Some(Fg::White),
+                bg: self.get_code().bg,
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_black(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::Black),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_red(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::Red),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_green(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::Green),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_yellow(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::Yellow),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_blue(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::Blue),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_magenta(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::Magenta),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_cyan(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::Cyan),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
+    }
+
+    fn bg_white(&self) -> ColoredString {
+        ColoredString {
+            data: self.to_string(),
+            code: Code {
+                fg: self.get_code().fg,
+                bg: Some(Bg::White),
+                bold: self.get_code().bold,
+                underline: self.get_code().underline,
+                reversed: self.get_code().reversed,
+            },
+        }
     }
 }
 
 mod palette {
-    pub const RESET: u8 = 0;
-    pub const BOLD: u8 = 1;
-    pub const UNDERLINE: u8 = 4;
+    // standard text decorators
+    #[derive(Debug, PartialEq, Clone)]
+    pub struct Bold;
 
-    pub const BLACK: u8 = 30;
-    pub const RED: u8 = 31;
-    pub const GREEN: u8 = 32;
-    pub const YELLOW: u8 = 33;
-    pub const BLUE: u8 = 34;
-    pub const MAGENTA: u8 = 35;
-    pub const CYAN: u8 = 36;
-    pub const WHITE: u8 = 37;
+    #[derive(Debug, PartialEq, Clone)]
+    pub struct Underline;
+
+    #[derive(Debug, PartialEq, Clone)]
+    pub struct Reversed;
+
+    // standard 8 ANSI foreground colors
+    #[derive(Debug, PartialEq, Clone)]
+    pub enum Fg {
+        Black,
+        Red,
+        Green,
+        Yellow,
+        Blue,
+        Magenta,
+        Cyan,
+        White,
+    }
+
+    // standard 8 ANSI background colors
+    #[derive(Debug, PartialEq, Clone)]
+    pub enum Bg {
+        Black,
+        Red,
+        Green,
+        Yellow,
+        Blue,
+        Magenta,
+        Cyan,
+        White
+    }
+}
+
+impl Display for palette::Bold {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "1")
+    }
+}
+
+impl Display for palette::Underline {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "4")
+    }
+}
+
+impl Display for palette::Reversed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "7")
+    }
+}
+
+impl Display for palette::Fg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::Black => "30",
+            Self::Red => "31",
+            Self::Green => "32", 
+            Self::Yellow => "33",
+            Self::Blue => "34",
+            Self::Magenta => "35",
+            Self::Cyan => "36",
+            Self::White => "37",
+        })
+    }
+}
+
+impl Display for palette::Bg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::Black => "40",
+            Self::Red => "41",
+            Self::Green => "42", 
+            Self::Yellow => "43",
+            Self::Blue => "44",
+            Self::Magenta => "45",
+            Self::Cyan => "46",
+            Self::White => "47",
+        })
+    }
 }
 
 const ESC_SEQ: &str = "\u{001b}";
+const RESET_CODE: &str = "0";
 
 #[cfg(test)]
 mod tests {
