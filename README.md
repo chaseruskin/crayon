@@ -1,6 +1,6 @@
 # `crayon`
 
-Simple library for rich text in ANSI terminal
+A simple library for rich text in ANSI terminal written in Rust.
 
 ## Reference
 
