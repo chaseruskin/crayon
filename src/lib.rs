@@ -155,12 +155,10 @@ impl Code {
 }
 
 pub trait AsAnsi {
-    /// Returns the ANSI terminal [Code] commands.
-    fn as_code(&self) -> Option<&Code> {
-        None
-    }
+    /// References the ANSI terminal [Code] commands.
+    fn as_code(&self) -> Option<&Code>;
 
-    /// Returns the original [String] contents without ANSI codes.
+    /// References the original [String] contents without ANSI codes.
     fn get_data(&self) -> &str;
 }
 
@@ -234,19 +232,24 @@ impl Display for ColoredString {
 }
 
 impl AsAnsi for ColoredString {
-    /// Returns the ANSI terminal [Code] commands.
+    /// References the ANSI terminal [Code] commands.
     fn as_code(&self) -> Option<&Code> {
         Some(&self.code)
     }
 
-    /// Returns the original [String] contents without ANSI codes.
+    /// References the original [String] contents without ANSI codes.
     fn get_data(&self) -> &str {
         &self.data
     }
 }
 
 impl<T: AsRef<str>> AsAnsi for T {
-    /// Returns the original [String] contents without ANSI codes.
+    /// References the ANSI terminal [Code] commands.
+    fn as_code(&self) -> Option<&Code> {
+        None
+    }
+
+    /// References the original [String] contents without ANSI codes.
     fn get_data(&self) -> &str {
         self.as_ref()
     }
