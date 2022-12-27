@@ -1,4 +1,4 @@
-use crayon::{Color, ColoredString, AsAnsi};
+use crayon::{AsAnsi, Color, ColoredString};
 
 fn main() -> () {
     let mut c = "blue".blue().bg_white();
@@ -6,7 +6,9 @@ fn main() -> () {
 
     let e = ColoredString::new("hello world");
 
-    let e = e.blue().get_data();
+    let text = String::new() + e.get_data();
+    println!("{}", text);
+    let e = e.blue().get_data().to_string();
     let text = "hello world";
 
     let s = text.red();

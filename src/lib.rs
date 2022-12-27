@@ -26,420 +26,6 @@ fn is_coloring() -> bool {
     }
 }
 
-use palette::*;
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Code {
-    fg: Option<Fg>,
-    bg: Option<Bg>,
-    bold: Option<Bold>,
-    underline: Option<Underline>,
-    reversed: Option<Reversed>,
-}
-
-impl Code {
-    fn is_decorated(&self) -> bool {
-        self.fg.is_some()
-            || self.bg.is_some()
-            || self.bold.is_some()
-            || self.underline.is_some()
-            || self.reversed.is_some()
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct ColoredString {
-    data: String,
-    code: Code,
-}
-
-impl ColoredString {
-    pub fn new(s: &str) -> Self {
-        Self {
-            data: s.to_string(),
-            code: Code {
-                bg: None,
-                fg: None,
-                underline: None,
-                bold: None,
-                reversed: None,
-            },
-        }
-    }
-}
-
-impl Display for ColoredString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match is_coloring() {
-            true => {
-                write!(
-                    f,
-                    "{}{}{}{}{}{}{}",
-                    if let Some(bg) = &self.code.bg {
-                        ESC_SEQ.to_owned() + "[" + &bg.to_string() + "m"
-                    } else {
-                        String::new()
-                    },
-                    if let Some(fg) = &self.code.fg {
-                        ESC_SEQ.to_owned() + "[" + &fg.to_string() + "m"
-                    } else {
-                        String::new()
-                    },
-                    if let Some(dc) = &self.code.bold {
-                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
-                    } else {
-                        String::new()
-                    },
-                    if let Some(dc) = &self.code.underline {
-                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
-                    } else {
-                        String::new()
-                    },
-                    if let Some(dc) = &self.code.reversed {
-                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
-                    } else {
-                        String::new()
-                    },
-                    self.data,
-                    if self.code.is_decorated() == true {
-                        ESC_SEQ.to_owned() + "[" + RESET_CODE + "m"
-                    } else {
-                        String::new()
-                    }
-                )
-            }
-            false => write!(f, "{}", self.data),
-        }
-    }
-}
-
-impl<T: AsRef<str>> AsAnsi for T {
-    /// Returns the original [String] contents without ANSI codes.
-    fn get_data(&self) -> String {
-        self.as_ref().to_owned()
-    }
-}
-
-impl AsAnsi for ColoredString {
-    /// Returns the ANSI terminal [Code] commands.
-    fn get_code(&self) -> Code {
-        self.code.clone()
-    }
-
-    /// Returns the original [String] contents without ANSI codes.
-    fn get_data(&self) -> String {
-        self.data.clone()
-    }
-}
-
-pub trait AsAnsi {
-    /// Returns the ANSI terminal [Code] commands.
-    fn get_code(&self) -> Code {
-        Code {
-            fg: None,
-            bg: None,
-            bold: None,
-            underline: None,
-            reversed: None,
-        }
-    }
-
-    /// Returns the original [String] contents without ANSI codes.
-    fn get_data(&self) -> String;
-}
-
-pub trait Color<T: Display + AsAnsi> {
-    fn bold(&self) -> ColoredString;
-    fn underline(&self) -> ColoredString;
-    fn reversed(&self) -> ColoredString;
-
-    fn black(&self) -> ColoredString;
-    fn red(&self) -> ColoredString;
-    fn green(&self) -> ColoredString;
-    fn yellow(&self) -> ColoredString;
-    fn blue(&self) -> ColoredString;
-    fn magenta(&self) -> ColoredString;
-    fn cyan(&self) -> ColoredString;
-    fn white(&self) -> ColoredString;
-
-    fn bg_black(&self) -> ColoredString;
-    fn bg_red(&self) -> ColoredString;
-    fn bg_green(&self) -> ColoredString;
-    fn bg_yellow(&self) -> ColoredString;
-    fn bg_blue(&self) -> ColoredString;
-    fn bg_magenta(&self) -> ColoredString;
-    fn bg_cyan(&self) -> ColoredString;
-    fn bg_white(&self) -> ColoredString;
-}
-
-impl<T: Display + AsAnsi> Color<T> for T {
-    fn bold(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: code.bg,
-                bold: Some(Bold),
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn underline(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: code.bg,
-                bold: code.bold,
-                underline: Some(Underline),
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn reversed(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: Some(Reversed),
-            },
-        }
-    }
-
-    fn black(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::Black),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn red(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::Red),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn green(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::Green),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn yellow(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::Yellow),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn blue(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::Blue),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn magenta(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::Magenta),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn cyan(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::Cyan),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn white(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: Some(Fg::White),
-                bg: code.bg,
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_black(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::Black),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_red(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::Red),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_green(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::Green),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_yellow(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::Yellow),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_blue(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::Blue),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_magenta(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::Magenta),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_cyan(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::Cyan),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-
-    fn bg_white(&self) -> ColoredString {
-        let code = self.get_code();
-        ColoredString {
-            data: self.get_data(),
-            code: Code {
-                fg: code.fg,
-                bg: Some(Bg::White),
-                bold: code.bold,
-                underline: code.underline,
-                reversed: code.reversed,
-            },
-        }
-    }
-}
-
 mod palette {
     // standard text decorators
     #[derive(Debug, PartialEq, Clone)]
@@ -536,6 +122,484 @@ impl Display for palette::Bg {
 
 const ESC_SEQ: &str = "\u{001b}";
 const RESET_CODE: &str = "0";
+
+use palette::*;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Code {
+    fg: Option<Fg>,
+    bg: Option<Bg>,
+    bold: Option<Bold>,
+    underline: Option<Underline>,
+    reversed: Option<Reversed>,
+}
+
+impl Code {
+    fn is_decorated(&self) -> bool {
+        self.fg.is_some()
+            || self.bg.is_some()
+            || self.bold.is_some()
+            || self.underline.is_some()
+            || self.reversed.is_some()
+    }
+
+    fn new() -> Self {
+        Self {
+            fg: None,
+            bg: None,
+            bold: None,
+            underline: None,
+            reversed: None,
+        }
+    }
+}
+
+pub trait AsAnsi {
+    /// Returns the ANSI terminal [Code] commands.
+    fn as_code(&self) -> Option<&Code> {
+        None
+    }
+
+    /// Returns the original [String] contents without ANSI codes.
+    fn get_data(&self) -> &str;
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct ColoredString {
+    data: String,
+    code: Code,
+}
+
+impl ColoredString {
+    pub fn new<T>(s: T) -> Self
+    where
+        String: From<T>,
+    {
+        Self {
+            data: s.into(),
+            code: Code {
+                bg: None,
+                fg: None,
+                underline: None,
+                bold: None,
+                reversed: None,
+            },
+        }
+    }
+}
+
+impl Display for ColoredString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match is_coloring() {
+            true => {
+                write!(
+                    f,
+                    "{}{}{}{}{}{}{}",
+                    if let Some(bg) = &self.code.bg {
+                        ESC_SEQ.to_owned() + "[" + &bg.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(fg) = &self.code.fg {
+                        ESC_SEQ.to_owned() + "[" + &fg.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(dc) = &self.code.bold {
+                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(dc) = &self.code.underline {
+                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    if let Some(dc) = &self.code.reversed {
+                        ESC_SEQ.to_owned() + "[" + &dc.to_string() + "m"
+                    } else {
+                        String::new()
+                    },
+                    self.data,
+                    if self.code.is_decorated() == true {
+                        ESC_SEQ.to_owned() + "[" + RESET_CODE + "m"
+                    } else {
+                        String::new()
+                    }
+                )
+            }
+            false => write!(f, "{}", self.data),
+        }
+    }
+}
+
+impl AsAnsi for ColoredString {
+    /// Returns the ANSI terminal [Code] commands.
+    fn as_code(&self) -> Option<&Code> {
+        Some(&self.code)
+    }
+
+    /// Returns the original [String] contents without ANSI codes.
+    fn get_data(&self) -> &str {
+        &self.data
+    }
+}
+
+impl<T: AsRef<str>> AsAnsi for T {
+    /// Returns the original [String] contents without ANSI codes.
+    fn get_data(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+pub trait Color<T: Display + AsAnsi> {
+    fn bold(&self) -> ColoredString;
+    fn underline(&self) -> ColoredString;
+    fn reversed(&self) -> ColoredString;
+
+    fn black(&self) -> ColoredString;
+    fn red(&self) -> ColoredString;
+    fn green(&self) -> ColoredString;
+    fn yellow(&self) -> ColoredString;
+    fn blue(&self) -> ColoredString;
+    fn magenta(&self) -> ColoredString;
+    fn cyan(&self) -> ColoredString;
+    fn white(&self) -> ColoredString;
+
+    fn bg_black(&self) -> ColoredString;
+    fn bg_red(&self) -> ColoredString;
+    fn bg_green(&self) -> ColoredString;
+    fn bg_yellow(&self) -> ColoredString;
+    fn bg_blue(&self) -> ColoredString;
+    fn bg_magenta(&self) -> ColoredString;
+    fn bg_cyan(&self) -> ColoredString;
+    fn bg_white(&self) -> ColoredString;
+}
+
+impl<T: Display + AsAnsi> Color<T> for T {
+    fn bold(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: code.bg,
+                bold: Some(Bold),
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn underline(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: code.bg,
+                bold: code.bold,
+                underline: Some(Underline),
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn reversed(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: Some(Reversed),
+            },
+        }
+    }
+
+    fn black(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Black),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn red(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Red),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn green(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Green),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn yellow(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Yellow),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn blue(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Blue),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn magenta(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Magenta),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn cyan(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Cyan),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn white(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::White),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_black(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Black),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_red(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Red),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_green(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Green),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_yellow(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Yellow),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_blue(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Blue),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_magenta(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Magenta),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_cyan(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Cyan),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+
+    fn bg_white(&self) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new(),
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::White),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            },
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
