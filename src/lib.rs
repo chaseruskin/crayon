@@ -1,6 +1,8 @@
 use std::fmt::Display;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+/// Global variable indicating whether the [Display] trait will format the ANSI
+/// codes to the [String] content.
 static IS_COLOR: AtomicBool = AtomicBool::new(true);
 
 mod color {
