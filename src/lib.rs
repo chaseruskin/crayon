@@ -156,6 +156,9 @@ impl Code {
 
 pub trait AsAnsi {
     /// References the ANSI terminal [Code] commands.
+    ///
+    /// A `None` value indicates the datatype does not support internally storing the
+    /// code as a separate field.
     fn as_code(&self) -> Option<&Code>;
 
     /// References the original [String] contents without ANSI codes.
@@ -169,19 +172,20 @@ pub struct ColoredString {
 }
 
 impl ColoredString {
-    pub fn new<T>(s: T) -> Self
+    pub fn new() -> Self {
+        Self {
+            data: String::new(),
+            code: Code::new(),
+        }
+    }
+
+    pub fn from<T>(s: T) -> Self
     where
         String: From<T>,
     {
         Self {
             data: s.into(),
-            code: Code {
-                bg: None,
-                fg: None,
-                underline: None,
-                bold: None,
-                reversed: None,
-            },
+            code: Code::new(),
         }
     }
 }
@@ -606,9 +610,151 @@ impl<T: Display + AsAnsi> Color<T> for T {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    const BG_CODE_LEN: usize = 5;
+    const FG_CODE_LEN: usize = 5;
+    const BOLD_CODE_LEN: usize = 4;
+    const UNDERLINE_CODE_LEN: usize = 4;
+    const REVERSED_CODE_LEN: usize = 4;
+    const RESET_CODE_LEN: usize = 4;
+    const NO_CODE_LEN: usize = 0;
 
     #[test]
-    fn it_works() {
-        assert!(true);
+    fn ut_red() {
+        let text = "red".red();
+        assert_ne!(text.to_string(), "red");
+        assert_eq!(text.get_data(), "red");
+        assert_eq!(
+            text.to_string().len(),
+            FG_CODE_LEN + text.get_data().len() + RESET_CODE_LEN
+        );
+        assert_eq!(
+            text.as_code().unwrap(),
+            &Code {
+                bg: None,
+                fg: Some(palette::Fg::Red),
+                bold: None,
+                underline: None,
+                reversed: None
+            }
+        );
+    }
+
+    #[test]
+    fn ut_normal_str() {
+        let text = "plain";
+        assert_eq!(text.to_string(), "plain");
+        assert_eq!(text.get_data(), "plain");
+        assert_eq!(
+            text.to_string().len(),
+            NO_CODE_LEN + text.get_data().len() + NO_CODE_LEN
+        );
+        assert_eq!(text.as_code(), None);
+    }
+
+    #[test]
+    fn ut_colored_string() {
+        let text = ColoredString::new();
+        assert_eq!(text.to_string(), "");
+        assert_eq!(text.get_data(), "");
+        assert_eq!(
+            text.to_string().len(),
+            NO_CODE_LEN + text.get_data().len() + NO_CODE_LEN
+        );
+        assert_eq!(
+            text.as_code().unwrap(),
+            &Code {
+                bg: None,
+                fg: None,
+                bold: None,
+                underline: None,
+                reversed: None
+            }
+        );
+
+        let text = ColoredString::from("hello world");
+        assert_eq!(text.to_string(), "hello world");
+        assert_eq!(text.get_data(), "hello world");
+        assert_eq!(
+            text.to_string().len(),
+            NO_CODE_LEN + text.get_data().len() + NO_CODE_LEN
+        );
+        assert_eq!(
+            text.as_code().unwrap(),
+            &Code {
+                bg: None,
+                fg: None,
+                bold: None,
+                underline: None,
+                reversed: None
+            }
+        );
+    }
+
+    #[test]
+    fn ut_overlap_colors() {
+        let mut text = "go".green().yellow().blue();
+        assert_ne!(text.to_string(), "go");
+        assert_eq!(text.get_data(), "go");
+        assert_eq!(
+            text.to_string().len(),
+            FG_CODE_LEN + text.get_data().len() + RESET_CODE_LEN
+        );
+        assert_eq!(
+            text.as_code().unwrap(),
+            &Code {
+                bg: None,
+                fg: Some(palette::Fg::Blue),
+                bold: None,
+                underline: None,
+                reversed: None
+            }
+        );
+        // swap out the foreground color
+        text = text.black().bg_yellow().bg_cyan();
+        assert_ne!(text.to_string(), "go");
+        assert_eq!(text.get_data(), "go");
+        assert_eq!(
+            text.to_string().len(),
+            FG_CODE_LEN + BG_CODE_LEN + text.get_data().len() + RESET_CODE_LEN
+        );
+        assert_eq!(
+            text.as_code().unwrap(),
+            &Code {
+                bg: Some(palette::Bg::Cyan),
+                fg: Some(palette::Fg::Black),
+                bold: None,
+                underline: None,
+                reversed: None
+            }
+        );
+    }
+
+    #[test]
+    fn ut_full_code() {
+        let text = "Go".blue().bold().underline().reversed().bg_white();
+        assert_ne!(text.to_string(), "Go");
+        assert_eq!(text.get_data(), "Go");
+        assert_eq!(
+            text.to_string().len(),
+            FG_CODE_LEN
+                + BG_CODE_LEN
+                + BOLD_CODE_LEN
+                + UNDERLINE_CODE_LEN
+                + REVERSED_CODE_LEN
+                + text.get_data().len()
+                + RESET_CODE_LEN
+        );
+        assert_eq!(
+            text.as_code().unwrap(),
+            &Code {
+                bg: Some(palette::Bg::White),
+                fg: Some(palette::Fg::Blue),
+                bold: Some(palette::Bold),
+                underline: Some(palette::Underline),
+                reversed: Some(palette::Reversed)
+            }
+        );
     }
 }

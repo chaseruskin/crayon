@@ -1,38 +1,79 @@
-use crayon::{AsAnsi, Color, ColoredString};
+use crayon::Color;
 
 fn main() -> () {
-    let mut c = "blue".blue().bg_white();
-    c = c.red().bg_green();
-
-    let e = ColoredString::new("hello world");
-
-    let text = String::new() + e.get_data();
-    println!("{}", text);
-    let e = e.blue().get_data().to_string();
-    let text = "hello world";
-
-    let s = text.red();
-    println!("{}", s);
-    println!("{}", s.green());
-
-    let d = "blue".red().bg_green();
-    println!("c: {}", c);
-    println!("d: {}", d);
-    println!("e: {}", e);
-
-    crayon::disable_color();
-    let c = "coloring".green().bold().underline();
-    println!("{} | size: {}", c, c.to_string().len());
-    crayon::enable_color();
-    println!("{} | size: {}", c, c.to_string().len());
-
+    let text = vec![
+        "c".red().bg_white().bold(),
+        "r".green().bg_white().bold(),
+        "a".yellow().bg_white().bold(),
+        "y".blue().bg_white().bold(),
+        "o".magenta().bg_white().bold(),
+        "n".cyan().bg_white().bold(),
+    ];
     println!(
-        "{} {} {}",
-        "red".red().bold(),
-        "green".green().underline(),
-        "blue".blue(),
+        "{0}   {0}",
+        text.iter()
+            .fold(String::new(), |acc, x| { acc + &x.to_string() })
     );
-
-    let message = "go".green().to_string() + &" gators".blue().to_string();
-    println!("{} ... {}", "go gators".cyan().bold(), message);
+    crayon::disable_color();
+    println!(
+        "{0}   {0}",
+        text.iter()
+            .fold(String::new(), |acc, x| { acc + &x.to_string() })
+    );
+    crayon::enable_color();
+    println!("");
+    print!("{} ", "1".black());
+    print!("{} ", "2".red());
+    print!("{} ", "3".green());
+    print!("{} ", "4".yellow());
+    print!("{} ", "5".blue());
+    print!("{} ", "6".magenta());
+    print!("{} ", "7".cyan());
+    print!("{} ", "8".white());
+    println!("");
+    print!("{} ", "1".bg_black());
+    print!("{} ", "2".bg_red());
+    print!("{} ", "3".bg_green());
+    print!("{} ", "4".bg_yellow());
+    print!("{} ", "5".bg_blue());
+    print!("{} ", "6".bg_magenta());
+    print!("{} ", "7".bg_cyan());
+    print!("{} ", "8".bg_white());
+    println!("");
+    print!("{} ", "1".black().underline());
+    print!("{} ", "2".red().underline());
+    print!("{} ", "3".green().underline());
+    print!("{} ", "4".yellow().underline());
+    print!("{} ", "5".blue().underline());
+    print!("{} ", "6".magenta().underline());
+    print!("{} ", "7".cyan().underline());
+    print!("{} ", "8".white().underline());
+    println!("");
+    print!("{} ", "1".black().bold());
+    print!("{} ", "2".red().bold());
+    print!("{} ", "3".green().bold());
+    print!("{} ", "4".yellow().bold());
+    print!("{} ", "5".blue().bold());
+    print!("{} ", "6".magenta().bold());
+    print!("{} ", "7".cyan().bold());
+    print!("{} ", "8".white().bold());
+    println!("");
+    print!("{} ", "1".black().reversed());
+    print!("{} ", "2".red().reversed());
+    print!("{} ", "3".green().reversed());
+    print!("{} ", "4".yellow().reversed());
+    print!("{} ", "5".blue().reversed());
+    print!("{} ", "6".magenta().reversed());
+    print!("{} ", "7".cyan().reversed());
+    print!("{} ", "8".white().reversed());
+    println!("");
+    print!("{} ", "1".black().bold().underline());
+    print!("{} ", "2".red().bold().underline());
+    print!("{} ", "3".green().bold().underline());
+    print!("{} ", "4".yellow().bold().underline());
+    print!("{} ", "5".blue().bold().underline());
+    print!("{} ", "6".magenta().bold().underline());
+    print!("{} ", "7".cyan().bold().underline());
+    print!("{} ", "8".white().bold().underline());
+    println!("");
 }
