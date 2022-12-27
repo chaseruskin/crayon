@@ -114,22 +114,26 @@ impl Display for ColoredString {
 }
 
 impl<T: AsRef<str>> AsAnsi for T {
+    /// Returns the original [String] contents without ANSI codes.
     fn get_data(&self) -> String {
         self.as_ref().to_owned()
     }
 }
 
 impl AsAnsi for ColoredString {
+    /// Returns the ANSI terminal [Code] commands.
     fn get_code(&self) -> Code {
         self.code.clone()
     }
 
+    /// Returns the original [String] contents without ANSI codes.
     fn get_data(&self) -> String {
         self.data.clone()
     }
 }
 
 pub trait AsAnsi {
+    /// Returns the ANSI terminal [Code] commands.
     fn get_code(&self) -> Code {
         Code {
             fg: None,
@@ -140,6 +144,7 @@ pub trait AsAnsi {
         }
     }
 
+    /// Returns the original [String] contents without ANSI codes.
     fn get_data(&self) -> String;
 }
 
