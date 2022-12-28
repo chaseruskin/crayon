@@ -58,7 +58,7 @@ jobs:
           # create intermediate artifact directory
           os.makedirs(target)
           # copy the executable into the final directory
-          shutil.copyfile('${{ env.APP_PATH }}/${{ env.APP }}${{ matrix.ext }}', target+'/${{ env.APP }}${{ matrix.ext }}')
+          shutil.copy2('${{ env.APP_PATH }}/${{ env.APP }}${{ matrix.ext }}', target+'/${{ env.APP }}${{ matrix.ext }}')
           # compress the final directory
           shutil.make_archive(target, 'zip', root_dir='.', base_dir=target)
         shell: python
