@@ -20,7 +20,7 @@ jobs:
           - os: windows-latest
             platform: windows-x64
             ext: '.exe'
-          - os: macos-latest
+          - os: macos-11
             platform: macos-x64
             ext: ''
 
@@ -50,11 +50,11 @@ jobs:
         run: cargo build --release --example ${{ env.APP }}
 
       - name: Package application
-        if: env.IS_LIB == false
+        if: env.IS_LIB == 'false'
         run: zip ${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}.zip ${{ env.APP_PATH }}/${{ env.APP }}${{ matrix.ext }}
 
       - name: Upload ${{ matrix.platform }} artifact
-        if: env.IS_LIB == false
+        if: env.IS_LIB == 'false'
         uses: actions/upload-artifact@v3
         with:
           name: ${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}
