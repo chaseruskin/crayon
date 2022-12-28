@@ -4,7 +4,9 @@ on:
 
 env:
   TARGET: crayon
-  IS_LIB: true
+  APP: canvas
+  APP_PATH: ./target/release/examples
+  IS_LIB: false
 
 jobs:
   build:
@@ -14,10 +16,13 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux-x64
+            ext: ''
           - os: windows-latest
             platform: windows-x64
+            ext: '.exe'
           - os: macos-latest
             platform: macos-x64
+            ext: ''
 
     runs-on: ${{ matrix.os }}
     defaults:
@@ -41,13 +46,12 @@ jobs:
       - name: Build
         run: cargo build --release
 
-      - name: Compress Windows executable
-        if: env.IS_LIB == false && runner.os == 'Windows'
-        run: zip ${{ env.TARGET }}-${{ matrix.platform}}-${{ github.ref_name }}.zip ./target/release/${{ env.TARGET }}.exe
+      - name: Build application
+        run: cargo build --release --example ${{ env.APP }}
 
-      - name: Compress Unix executable
-        if: env.IS_LIB == false && runner.os != 'Windows'
-        run: zip ${{ env.TARGET }}-${{ matrix.platform}}-${{ github.ref_name }}.zip ./target/release/${{ env.TARGET }}
+      - name: Package application
+        if: env.IS_LIB == false
+        run: zip ${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}.zip ${{ env.APP_PATH }}/${{ env.APP }}${{ matrix.ext }}
 
       - name: Upload ${{ matrix.platform }} artifact
         if: env.IS_LIB == false
