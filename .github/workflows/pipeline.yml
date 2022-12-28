@@ -53,12 +53,14 @@ jobs:
         if: env.IS_LIB == 'false'
         run: |
           import shutil, os
-          target = '${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}.zip'
+          target = '${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}'
           print(target)
-          # os.makedirs()
-          # output = ${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}.zip
-          # shutil.make_archive(output_filename, 'zip', dir_name)
-          # zip  ${{ env.APP_PATH }}/${{ env.APP }}${{ matrix.ext }}
+          # create intermediate artifact directory
+          os.makedirs(target)
+          # copy the executable into the final directory
+          shutil.copyfile('${{ env.APP_PATH }}/${{ env.APP }}${{ matrix.ext }}', target+'/${{ env.APP }}${{ matrix.ext }}')
+          # compress the final directory
+          shutil.make_archive(target+'.zip', 'zip', root_dir=target, base_dir=target)
         shell: python
 
       - name: Upload ${{ matrix.platform }} artifact
