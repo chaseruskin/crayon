@@ -60,7 +60,7 @@ jobs:
           # copy the executable into the final directory
           shutil.copyfile('${{ env.APP_PATH }}/${{ env.APP }}${{ matrix.ext }}', target+'/${{ env.APP }}${{ matrix.ext }}')
           # compress the final directory
-          shutil.make_archive(target+'.zip', 'zip', root_dir=target, base_dir='.')
+          shutil.make_archive('../'+target+'.zip', 'zip', root_dir=target, base_dir='.')
         shell: python
 
       - name: Upload ${{ matrix.platform }} artifact
@@ -69,3 +69,4 @@ jobs:
         with:
           name: ${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}
           path: ./${{ env.TARGET }}-${{ matrix.platform }}-${{ github.ref_name }}.zip
+          if-no-files-found: error
