@@ -76,4 +76,60 @@ fn main() -> () {
     print!("{} ", "7".cyan().bold().underline());
     print!("{} ", "8".white().bold().underline());
     println!("");
+    println!("");
+
+    let mut i = 0;
+    for r in 0..6 {
+        for g in 0..6 {
+            for b in 0..6 {
+                print!("{} ", (i + 16).to_string().rgb(46 + (40*r), 46 + (40*g), 46 + (40*b)));
+                i += 1;
+            }
+        }
+    }
+    for i in 0..24 {
+        let p = 8 + (i*10);
+        print!("{} ", (i + 232).to_string().rgb(p, p, p));
+    }
+    println!("");
+    println!("");
+
+    for i in 0..16 {
+        print!("{} ", i.to_string().wheel(i));
+    }
+    println!("");
+
+    for i in 16..=255 {
+        print!("{} ", i.to_string().wheel(i));
+    }
+    println!("");
+    println!("");
+
+    let mut i = 0;
+    for r in 0..6 {
+        for g in 0..6 {
+            for b in 0..6 {
+                print!("{}", format!("{} ", i+16).bg_rgb(46 + (40*r), 46 + (40*g), 46 + (40*b)));
+                i += 1;
+            }
+        }
+    }
+    for i in 0..24 {
+        let p = 8 + (i*10);
+        print!("{}", format!("{} ", i+232).bg_rgb(p, p, p));
+    }
+    println!("");
+
+    println!("");
+    for i in 0..16 {
+        print!("{}", format!("{} ", i).bg_wheel(i));
+    }
+    println!("");
+    println!("");
+
+    for i in 16..=255 {
+        print!("{}", format!("{} ", i).bg_wheel(i));
+    }
+    println!("");
+
 }

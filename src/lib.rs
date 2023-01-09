@@ -50,6 +50,8 @@ mod palette {
         Magenta,
         Cyan,
         White,
+        Any(u8, u8, u8),
+        Index(u8),
     }
 
     // standard 8 ANSI background colors
@@ -63,6 +65,43 @@ mod palette {
         Magenta,
         Cyan,
         White,
+        Any(u8, u8, u8),
+        Index(u8),
+    }
+
+    fn downscale(n: &u8) -> u8 {
+        if n < &(95 - 20) {
+            0
+        } else if n < &(135 - 20) {
+            1
+        } else if n < &(175 - 20) {
+            2
+        } else if n < &(215 - 20) {
+            3
+        } else if n < &(255 - 20) {
+            4
+        } else {
+            5
+        }
+    }
+
+    fn is_greyscale(r: &u8, g: &u8, b: &u8) -> bool {
+        r == g && g == b
+    }
+
+    fn downscale_grey(p: &u8) -> u8 {
+        p / 11
+    }
+
+    pub fn compute_index(r: &u8, g: &u8, b: &u8) -> u8 {
+        if is_greyscale(r, g, b) == true {
+            match g {
+                255 => 231,
+                _ => downscale_grey(g) + 232
+            }
+        } else {
+            ((downscale(r) * 36) + (downscale(g) * 6) + downscale(b)) + 16
+        }
     }
 }
 
@@ -86,6 +125,7 @@ impl Display for palette::Reversed {
 
 impl Display for palette::Fg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut buf = String::new();
         write!(
             f,
             "{}",
@@ -98,6 +138,14 @@ impl Display for palette::Fg {
                 Self::Magenta => "35",
                 Self::Cyan => "36",
                 Self::White => "37",
+                Self::Index(i) => {
+                    buf.push_str(&format!("38;5;{}", i));
+                    &buf
+                },
+                Self::Any(r, g, b) => {
+                    buf.push_str(&format!("38;5;{}", palette::compute_index(r, g, b)));
+                    &buf
+                },
             }
         )
     }
@@ -105,6 +153,7 @@ impl Display for palette::Fg {
 
 impl Display for palette::Bg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut buf = String::new();
         write!(
             f,
             "{}",
@@ -117,6 +166,14 @@ impl Display for palette::Bg {
                 Self::Magenta => "45",
                 Self::Cyan => "46",
                 Self::White => "47",
+                Self::Index(i) => {
+                    buf.push_str(&format!("48;5;{}", i));
+                    &buf
+                },
+                Self::Any(r, g, b) => {
+                    buf.push_str(&format!("48;5;{}", palette::compute_index(r, g, b)));
+                    &buf
+                },
             }
         )
     }
@@ -274,6 +331,8 @@ pub trait Color<T: Display + AsAnsi> {
     fn magenta(&self) -> ColoredString;
     fn cyan(&self) -> ColoredString;
     fn white(&self) -> ColoredString;
+    fn rgb(&self, r: u8, g: u8, b: u8) -> ColoredString;
+    fn wheel(&self, i: u8) -> ColoredString;
 
     fn bg_black(&self) -> ColoredString;
     fn bg_red(&self) -> ColoredString;
@@ -283,6 +342,8 @@ pub trait Color<T: Display + AsAnsi> {
     fn bg_magenta(&self) -> ColoredString;
     fn bg_cyan(&self) -> ColoredString;
     fn bg_white(&self) -> ColoredString;
+    fn bg_rgb(&self, r: u8, g: u8, b: u8) -> ColoredString;
+    fn bg_wheel(&self, i: u8) -> ColoredString;
 }
 
 impl<T: Display + AsAnsi> Color<T> for T {
@@ -334,6 +395,40 @@ impl<T: Display + AsAnsi> Color<T> for T {
                 underline: code.underline,
                 reversed: Some(Reversed),
             },
+        }
+    }
+
+    fn rgb(&self, r: u8, g: u8, b: u8) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new()
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Any(r, g, b)),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            }
+        }
+    }
+
+    fn wheel(&self, i: u8) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new()
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: Some(Fg::Index(i)),
+                bg: code.bg,
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            }
         }
     }
 
@@ -608,6 +703,40 @@ impl<T: Display + AsAnsi> Color<T> for T {
             },
         }
     }
+
+    fn bg_rgb(&self, r: u8, g: u8, b: u8) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new()
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Any(r, g, b)),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            }
+        }
+    }
+
+    fn bg_wheel(&self, i: u8) -> ColoredString {
+        let code = match self.as_code() {
+            Some(c) => c.clone(),
+            None => Code::new()
+        };
+        ColoredString {
+            data: self.get_data().to_string(),
+            code: Code {
+                fg: code.fg,
+                bg: Some(Bg::Index(i)),
+                bold: code.bold,
+                underline: code.underline,
+                reversed: code.reversed,
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -758,5 +887,36 @@ mod tests {
                 reversed: Some(palette::Reversed)
             }
         );
+    }
+
+    #[test]
+    fn ut_round() {
+        // assert_eq!(downscale(1), 0); 
+        // assert_eq!(downscale(15), 0);
+        // assert_eq!(downscale(16), 0);
+        // assert_eq!(downscale(31), 0);
+        // assert_eq!(downscale(32), 0);
+        // assert_eq!(downscale(0), 0); 
+        // assert_eq!(downscale(95), 1);
+        // assert_eq!(downscale(135), 2);
+        // assert_eq!(downscale(175), 3);
+        // assert_eq!(downscale(215), 4);
+        // assert_eq!(downscale(255), 5);
+
+        // println!("{}", ((downscale(255) * 36) + (downscale(175) * 6) + downscale(95)) + 16);
+        // println!("{}", ((downscale(255) * 36) + (downscale(255) * 6) + downscale(255)) + 16);
+
+
+        // for i in 0..24 {
+        //     println!("{} = {}", (i*10) + 8, downscale_grey((i*10)+ 8));
+        // }
+
+        // for i in 0..=255 {
+        //     println!("{} = {}", i, downscale_grey(&i));
+        // }
+
+        // println!("{}", compute_index(&228, &228, &228));
+        // // 24 additional points (grey-scale)
+        // panic!();
     }
 }
