@@ -50,7 +50,6 @@ mod palette {
         Magenta,
         Cyan,
         White,
-        Any(u8, u8, u8),
         Index(u8),
     }
 
@@ -65,7 +64,6 @@ mod palette {
         Magenta,
         Cyan,
         White,
-        Any(u8, u8, u8),
         Index(u8),
     }
 
@@ -142,10 +140,6 @@ impl Display for palette::Fg {
                     buf.push_str(&format!("38;5;{}", i));
                     &buf
                 },
-                Self::Any(r, g, b) => {
-                    buf.push_str(&format!("38;5;{}", palette::compute_index(r, g, b)));
-                    &buf
-                },
             }
         )
     }
@@ -168,10 +162,6 @@ impl Display for palette::Bg {
                 Self::White => "47",
                 Self::Index(i) => {
                     buf.push_str(&format!("48;5;{}", i));
-                    &buf
-                },
-                Self::Any(r, g, b) => {
-                    buf.push_str(&format!("48;5;{}", palette::compute_index(r, g, b)));
                     &buf
                 },
             }
@@ -406,7 +396,7 @@ impl<T: Display + AsAnsi> Color<T> for T {
         ColoredString {
             data: self.get_data().to_string(),
             code: Code {
-                fg: Some(Fg::Any(r, g, b)),
+                fg: Some(Fg::Index(palette::compute_index(&r, &g, &b))),
                 bg: code.bg,
                 bold: code.bold,
                 underline: code.underline,
@@ -713,7 +703,7 @@ impl<T: Display + AsAnsi> Color<T> for T {
             data: self.get_data().to_string(),
             code: Code {
                 fg: code.fg,
-                bg: Some(Bg::Any(r, g, b)),
+                bg: Some(Bg::Index(palette::compute_index(&r, &g, &b))),
                 bold: code.bold,
                 underline: code.underline,
                 reversed: code.reversed,

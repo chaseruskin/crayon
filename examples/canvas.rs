@@ -115,7 +115,8 @@ fn main() -> () {
         }
     }
     for i in 0..24 {
-        let p = 8 + (i*10);
+        let p = 12 + (i*10);
+
         print!("{}", format!("{} ", i+232).bg_rgb(p, p, p));
     }
     println!("");
